@@ -1,19 +1,43 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import Login from './Login'
-import { useForm } from "react-hook-form"
+import React from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // Use useNavigate and useLocation
+import { useForm } from "react-hook-form";
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const Signup = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm()
+  const navigate = useNavigate(); // Initialize useNavigate inside the component
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/"; // Fallback to home page if no "from" location is set
 
-  const onSubmit = (data) => {
-    console.log(data); // Logs the form data
-    document.getElementById("my_modal_3").close(); // Closes the modal after successful submission
-  }
+  const { register, handleSubmit, formState: { errors } } = useForm();
+  const [errorMessage, setErrorMessage] = React.useState('');
+
+  const onSubmit = async (data) => {
+    const userInfo = {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+    };
+
+    try {
+      const response = await axios.post("http://localhost:3000/api/signup", userInfo);
+      if (response.data) {
+        toast.success("Signup successful");
+
+        // Programmatically navigate to the intended page or home page
+        navigate(from, { replace: true });
+
+        setErrorMessage('');
+        document.getElementById("my_modal_3").close(); // Close modal after successful signup
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+    } catch (error) {
+      // Catch and handle errors
+      if (error.response) {
+        toast.error(error.response.data.message || "Something went wrong.");
+      }
+    }
+  };
 
   return (
     <div className='flex h-screen items-center justify-center border'>
@@ -28,12 +52,16 @@ const Signup = () => {
 
             <h3 className="font-bold text-lg">Signup</h3>
 
+            {/* Show error message */}
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+
             {/* Name Input */}
             <div className='mt-4 space-y-2'>
               <span>Name</span>
               <br />
               <input
-                type='text' className='w-80 px-3 border py-1 outline-none rounded-md'
+                type='text'
+                className='w-80 px-3 border py-1 outline-none rounded-md'
                 placeholder='Enter Your fullname'
                 {...register("name", { required: "Name is required" })}
               />
@@ -46,7 +74,8 @@ const Signup = () => {
               <span>Email</span>
               <br />
               <input
-                type='email' className='w-80 px-3 border py-1 outline-none rounded-md'
+                type='email'
+                className='w-80 px-3 border py-1 outline-none rounded-md'
                 placeholder='Enter Your email'
                 {...register("email", { required: "Email is required" })}
               />
@@ -59,7 +88,8 @@ const Signup = () => {
               <span>Password</span>
               <br />
               <input
-                type='password' className='w-80 px-3 border py-1 outline-none rounded-md'
+                type='password'
+                className='w-80 px-3 border py-1 outline-none rounded-md'
                 placeholder='Enter Your password'
                 {...register("password", { required: "Password is required" })}
               />
@@ -74,20 +104,18 @@ const Signup = () => {
               </button>
               <p>
                 Have an account?
-                <button
+                <Link to="/"
                   className='underline cursor-pointer text-blue-500'
                   onClick={() => document.getElementById("my_modal_3").showModal()}>
                   Login
-                </button>
-                {" "}
-                <Login />
+                </Link>
               </p>
             </div>
           </form>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Signup
+export default Signup;
